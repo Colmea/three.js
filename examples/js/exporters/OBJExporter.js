@@ -6,61 +6,100 @@ THREE.OBJExporter = function () {};
 
 THREE.OBJExporter.prototype = {
 
-	constructor: THREE.OBJExporter,
+    constructor: THREE.OBJExporter,
 
-	parse: function ( geometry ) {
+    indexVertex: 0,
+    indexVertexUvs: 0,
+    indexNormals: 0,
 
+    parentMatrix4: null,
+
+    scaleFactor: 0.01,
+
+	parse: function ( object ) {
+        var _self = this;
 		var output = '';
 
-		for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
+        var nbVertex, nbVertexUvs, nbNormals;
+        nbVertex = nbVertexUvs = nbNormals = 0;
 
-			var vertex = geometry.vertices[ i ];
-			output += 'v ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
+        var geometry = object.geometry;
 
-		}
+        output += 'g ' + object.id + '\n';
 
-		// uvs
+        if (object.geometry) {
+            for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
 
-		for ( var i = 0, l = geometry.faceVertexUvs[ 0 ].length; i < l; i ++ ) {
+                var vertex = geometry.vertices[ i ].clone();
 
-			var vertexUvs = geometry.faceVertexUvs[ 0 ][ i ];
+                vertex.applyMatrix4( object.matrixWorld );
 
-			for ( var j = 0; j < vertexUvs.length; j ++ ) {
+                output += 'v ' + this.scaleFactor * vertex.x + ' ' + this.scaleFactor * vertex.y + ' ' + this.scaleFactor * vertex.z + '\n';
 
-				var uv = vertexUvs[ j ];
-				output += 'vt ' + uv.x + ' ' + uv.y + '\n';
+                nbVertex++;
+            }
 
-			}
+            // uvs
 
-		}
+            for ( var i = 0, l = geometry.faceVertexUvs[ 0 ].length; i < l; i ++ ) {
 
-		// normals
+                var vertexUvs = geometry.faceVertexUvs[ 0 ][ i ];
 
-		for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
+                for ( var j = 0; j < vertexUvs.length; j ++ ) {
 
-			var normals = geometry.faces[ i ].vertexNormals;
+                    var uv = vertexUvs[ j ];
+                    output += 'vt ' + this.scaleFactor * uv.x + ' ' + this.scaleFactor * uv.y + '\n';
 
-			for ( var j = 0; j < normals.length; j ++ ) {
+                    nbVertexUvs++;
+                }
 
-				var normal = normals[ j ];
-				output += 'vn ' + normal.x + ' ' + normal.y + ' ' + normal.z + '\n';
+            }
 
-			}
+            // normals
 
-		}
+            for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
 
-		// faces
+                var normals = geometry.faces[ i ].vertexNormals;
 
-		for ( var i = 0, j = 1, l = geometry.faces.length; i < l; i ++, j += 3 ) {
+                for ( var j = 0; j < normals.length; j ++ ) {
 
-			var face = geometry.faces[ i ];
+                    var normal = normals[ j ];
+                    output += 'vn ' + this.scaleFactor * normal.x + ' ' + this.scaleFactor * normal.y + ' ' + this.scaleFactor * normal.z + '\n';
 
-			output += 'f ';
-			output += ( face.a + 1 ) + '/' + ( j ) + '/' + ( j ) + ' ';
-			output += ( face.b + 1 ) + '/' + ( j + 1 ) + '/' + ( j + 1 ) + ' ';
-			output += ( face.c + 1 ) + '/' + ( j + 2 ) + '/' + ( j + 2 ) + '\n';
+                    nbNormals++;
+                }
 
-		}
+            }
+
+            // faces
+
+            for ( var i = 0, j = 1, l = geometry.faces.length; i < l; i ++, j += 3 ) {
+
+                var face = geometry.faces[ i ];
+
+                output += 'f ';
+                output += ( this.indexVertex + face.a + 1 ) + '/' + ( this.indexVertexUvs + j ) + '/' + ( this.indexNormals + j ) + ' ';
+                output += ( this.indexVertex + face.b + 1 ) + '/' + ( this.indexVertexUvs + j + 1 ) + '/' + ( this.indexNormals + j + 1 ) + ' ';
+                output += ( this.indexVertex + face.c + 1 ) + '/' + ( this.indexVertexUvs + j + 2 ) + '/' + ( this.indexNormals + j + 2 ) + '\n';
+
+            }
+        }
+
+        // update index
+        this.indexVertex += nbVertex;
+        this.indexVertexUvs += nbVertexUvs
+        this.indexNormals += nbNormals
+
+        // Create children objects
+        if (object.children && object.children.length > 0) {
+
+            output += 'g ' + object.id + '\n';
+
+            for ( var i in object.children ) {
+                output += '# new children object: ' + object.children[i].id + '\n';
+                output += _self.parse( object.children[i] );
+            }
+        }
 
 		return output;
 
