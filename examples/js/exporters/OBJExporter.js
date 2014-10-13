@@ -14,7 +14,7 @@ THREE.OBJExporter.prototype = {
 
     parentMatrix4: null,
 
-    scaleFactor: 0.01,
+    scaleFactor: 1,
 
 	parse: function ( object ) {
         var _self = this;
