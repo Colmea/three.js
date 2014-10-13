@@ -93,8 +93,6 @@ THREE.OBJExporter.prototype = {
         // Create children objects
         if (object.children && object.children.length > 0) {
 
-            output += 'g ' + object.id + '\n';
-
             for ( var i in object.children ) {
                 output += '# new children object: ' + object.children[i].id + '\n';
                 output += _self.parse( object.children[i] );
